@@ -15,7 +15,6 @@ import (
 )
 
 func main() {
-	// Setup the configuration from kubeconfig
 	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
@@ -23,20 +22,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Set up logging
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
-	// Create a manager for the controllers
 	mgr, err := ctrl.NewManager(config, ctrl.Options{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start manager: %s\n", err)
 		os.Exit(1)
 	}
 
-	// Create Prometheus client
 	promClient, err := api.NewClient(api.Config{
-		Address: "http://localhost:9090", // Replace with your Prometheus instance URL
+		Address: "http://prometheus.monitoring.svc.cluster.local:9090",
 	})
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create Prometheus client: %s\n", err)
 		os.Exit(1)
@@ -46,7 +43,7 @@ func main() {
 	// Setup PodReconciler (to handle pod restarts based on errors)
 	if err := (&controller.PodReconciler{
 		Client:        mgr.GetClient(),
-		PrometheusAPI: promAPI, // Make sure PrometheusAPI field exists in PodReconciler
+		PrometheusAPI: promAPI,
 	}).SetupWithManager(mgr); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to set up PodReconciler: %s\n", err)
 		os.Exit(1)
