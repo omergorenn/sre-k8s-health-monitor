@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: health-monitor
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: health-monitor
@@ -16,41 +16,5 @@ spec:
       serviceAccountName: health-monitor-sa
       containers:
         - name: health-monitor
-          image: health-monitor:latest
+          image: sre-health-monitor
           imagePullPolicy: IfNotPresent
-          env:
-            - name: PROMETHEUS_ADDRESS
-              valueFrom:
-                configMapKeyRef:
-                  name: health-monitor-config
-                  key: PROMETHEUS_ADDRESS
-            - name: RABBITMQ_USER
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq-secret
-                  key: username
-            - name: RABBITMQ_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: rabbitmq-secret
-                  key: password
-            - name: RABBITMQ_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: health-monitor-config
-                  key: RABBITMQ_HOST
-            - name: RABBITMQ_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: health-monitor-config
-                  key: RABBITMQ_PORT
-            - name: CPU_THRESHOLD
-              valueFrom:
-                configMapKeyRef:
-                  name: health-monitor-config
-                  key: CPU_THRESHOLD
-            - name: MEMORY_THRESHOLD
-              valueFrom:
-                configMapKeyRef:
-                  name: health-monitor-config
-                  key: MEMORY_THRESHOLD

@@ -3,38 +3,36 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/omergorenn/sre-k8s-health-monitor/pkg/config"
+	"time"
+
+	"github.com/omergorenn/sre-k8s-health-monitor/pkg/rabbitmq"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
-	"github.com/streadway/amqp"
+	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 type NodeReconciler struct {
 	client.Client
-	PrometheusAPI v1.API
-	Config        *config.Config // Use the Config struct to store both configs and secrets
+	PrometheusAPI  v1.API
+	RabbitmqClient rabbitmq.RabbitClient
 }
 
-func NewNodeReconciler(mgr manager.Manager, promAPI v1.API, appConfig *config.Config) *NodeReconciler {
+func NewNodeReconciler(mgr manager.Manager, promAPI v1.API, rabbitClient rabbitmq.RabbitClient) *NodeReconciler {
 	return &NodeReconciler{
-		Client:        mgr.GetClient(),
-		PrometheusAPI: promAPI,
-		Config:        appConfig, // Pass appConfig to use in reconciler
+		Client:         mgr.GetClient(),
+		PrometheusAPI:  promAPI,
+		RabbitmqClient: rabbitClient,
 	}
 }
 
 func (r *NodeReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	const cpuThreshold = 0.0
 	const memoryThreshold = 0.0
-
-	logger := log.FromContext(ctx)
 
 	var node corev1.Node
 	if err := r.Get(ctx, req.NamespacedName, &node); err != nil {
@@ -44,7 +42,7 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req reconcile.Request) (
 	// Retrieve the node's internal IP
 	nodeInternalIP, err := getNodeInternalIP(&node)
 	if err != nil {
-		logger.Error(err, "Failed to get internal IP for node", "node", node.Name)
+		zap.L().Info("Failed to get internal IP for node", zap.String("node", node.Name), zap.Error(err))
 		return reconcile.Result{}, err
 	}
 	prometheusInstance := fmt.Sprintf("%s:9100", nodeInternalIP)
@@ -53,27 +51,26 @@ func (r *NodeReconciler) Reconcile(ctx context.Context, req reconcile.Request) (
 	cpuQuery := fmt.Sprintf(`100 - (avg by (instance) (rate(node_cpu_seconds_total{instance="%s", mode="idle"}[5m])) * 100)`, prometheusInstance)
 	cpuResult, err := r.queryPrometheus(cpuQuery)
 	if err != nil {
-		logger.Error(err, "Failed to query Prometheus for CPU usage")
+		zap.L().Info("Failed to query Prometheus for CPU usage", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 
 	memoryQuery := fmt.Sprintf(`(node_memory_MemTotal_bytes{instance="%s"} - node_memory_MemAvailable_bytes{instance="%s"}) / node_memory_MemTotal_bytes{instance="%s"} * 100`, prometheusInstance, prometheusInstance, prometheusInstance)
 	memoryResult, err := r.queryPrometheus(memoryQuery)
 	if err != nil {
-		logger.Error(err, "Failed to query Prometheus for memory usage")
+		zap.L().Info("Failed to query Prometheus for memory usage", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 
 	// Check if the node is hitting limits
 	if r.isNodeUnderPressure(cpuResult, cpuThreshold) || r.isNodeUnderPressure(memoryResult, memoryThreshold) {
-		// Create an event in RabbitMQ
 		message := fmt.Sprintf("Node %s is reaching its resource limits", node.Name)
-		err := r.createEventToQueue(message)
+		err = r.RabbitmqClient.PublishEvent("node_alerts", message)
 		if err != nil {
-			logger.Error(err, "Failed to send event to RabbitMQ")
-		} else {
-			logger.Info("Event sent to queue", "message", message)
+			return reconcile.Result{}, err
 		}
+		zap.L().Info("Resource usage is low on the node, message sent to queue")
+
 	}
 
 	return reconcile.Result{}, nil
@@ -88,7 +85,7 @@ func (r *NodeReconciler) queryPrometheus(query string) (model.Value, error) {
 		return nil, err
 	}
 	if len(warnings) > 0 {
-		fmt.Printf("Prometheus warnings: %v\n", warnings)
+		zap.L().Info("Prometheus warnings", zap.Any("warnings", warnings))
 	}
 
 	return result, nil
@@ -97,7 +94,7 @@ func (r *NodeReconciler) queryPrometheus(query string) (model.Value, error) {
 func (r *NodeReconciler) isNodeUnderPressure(result model.Value, threshold float64) bool {
 	vector, ok := result.(model.Vector)
 	if !ok {
-		fmt.Println("Prometheus query result is not a vector.")
+		zap.L().Info("Prometheus query result is not a vector")
 		return false
 	}
 
@@ -107,56 +104,6 @@ func (r *NodeReconciler) isNodeUnderPressure(result model.Value, threshold float
 		}
 	}
 	return false
-}
-
-func (r *NodeReconciler) createEventToQueue(message string) error {
-
-	rabbitmqUser := r.Config.Secret.RabbitMqCredentials.User
-	rabbitmqPassword := r.Config.Secret.RabbitMqCredentials.Password
-	rabbitmqHost := r.Config.RabbitMq.Host
-	rabbitmqPort := r.Config.RabbitMq.Port
-
-	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/",
-		rabbitmqUser, rabbitmqPassword, rabbitmqHost, rabbitmqPort)
-
-	conn, err := amqp.Dial(connStr)
-	if err != nil {
-		return fmt.Errorf("failed to connect to RabbitMQ: %v", err)
-	}
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	if err != nil {
-		return fmt.Errorf("failed to open a channel: %v", err)
-	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		"node_alerts",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %v", err)
-	}
-
-	err = ch.Publish(
-		"",
-		q.Name,
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(message),
-		})
-	if err != nil {
-		return fmt.Errorf("failed to publish a message: %v", err)
-	}
-
-	return nil
 }
 
 func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {

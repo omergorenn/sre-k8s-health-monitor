@@ -6,6 +6,7 @@ import (
 
 	"github.com/omergorenn/sre-k8s-health-monitor/pkg/config"
 	"github.com/streadway/amqp"
+	"go.uber.org/zap"
 )
 
 type RabbitClient struct {
@@ -13,7 +14,7 @@ type RabbitClient struct {
 	Ch   *amqp.Channel
 }
 
-func New(appConfig *config.Config) (*RabbitClient, error) {
+func NewClient(appConfig *config.Config) (*RabbitClient, error) {
 	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/",
 		appConfig.Secret.RabbitMqCredentials.User,
 		appConfig.Secret.RabbitMqCredentials.Password,
@@ -29,11 +30,11 @@ func New(appConfig *config.Config) (*RabbitClient, error) {
 	return &RabbitClient{Conn: conn}, nil
 }
 
-func (r *RabbitClient) CloseConnection() {
+func (r *RabbitClient) closeConnection() {
 	r.Conn.Close()
 }
 
-func (r *RabbitClient) OpenChannel() error {
+func (r *RabbitClient) openChannel() error {
 	ch, err := r.Conn.Channel()
 	if err != nil {
 		return err
@@ -42,11 +43,11 @@ func (r *RabbitClient) OpenChannel() error {
 	return nil
 }
 
-func (r *RabbitClient) CloseChannel() {
+func (r *RabbitClient) closeChannel() {
 	r.Ch.Close()
 }
 
-func (r *RabbitClient) DeclareQueue(name string) error {
+func (r *RabbitClient) declareQueue(name string) error {
 	_, err := r.Ch.QueueDeclare(
 		name,
 		false,
@@ -62,7 +63,7 @@ func (r *RabbitClient) DeclareQueue(name string) error {
 	return nil
 }
 
-func (r *RabbitClient) PublishMessage(name string, message any) error {
+func (r *RabbitClient) publishMessage(name string, message any) error {
 	msg, err := json.Marshal(message)
 	if err != nil {
 		return err
@@ -79,6 +80,28 @@ func (r *RabbitClient) PublishMessage(name string, message any) error {
 		},
 	)
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *RabbitClient) PublishEvent(name string, message any) error {
+	err := r.openChannel()
+	if err != nil {
+		zap.L().Fatal("Failed to open a channel ", zap.Error(err))
+		return err
+	}
+
+	defer r.closeChannel()
+
+	if err := r.declareQueue("node_alerts"); err != nil {
+		zap.L().Fatal("failed to declare queue ", zap.Error(err))
+		return err
+	}
+
+	if err := r.publishMessage("node_alerts", message); err != nil {
+		zap.L().Fatal("failed to publish message ", zap.Error(err))
 		return err
 	}
 

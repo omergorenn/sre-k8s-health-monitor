@@ -2,28 +2,30 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/omergorenn/sre-k8s-health-monitor/pkg/config"
 	"github.com/omergorenn/sre-k8s-health-monitor/pkg/controller"
+	"github.com/omergorenn/sre-k8s-health-monitor/pkg/rabbitmq"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
-	"log"
+	"go.uber.org/zap"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func main() {
 	appConfig, err := config.Get()
 	if err != nil {
-		log.Fatal("Error getting configs: ", err)
+		zap.L().Fatal("Error getting configs", zap.Error(err))
 	}
 
 	restConfig, err := ctrl.GetConfig()
 	if err != nil {
-		log.Fatal("Failed to get kubeconfig: ", err)
+		zap.L().Fatal("Failed to get kubeconfig", zap.Error(err))
 	}
 
 	// Set up logging for ctrl runtime.
-	ctrl.SetLogger(zap.New())
+	ctrl.SetLogger(ctrlzap.New())
 
 	// Enable leader election for multiple instances
 	mgr, err := ctrl.NewManager(restConfig, ctrl.Options{
@@ -32,7 +34,7 @@ func main() {
 		LeaderElectionNamespace: "default",
 	})
 	if err != nil {
-		log.Fatal("Failed to start manager: ", err)
+		zap.L().Fatal("Failed to start manager", zap.Error(err))
 	}
 
 	// Create Prometheus client
@@ -40,24 +42,29 @@ func main() {
 		Address: fmt.Sprintf("%s:%s", appConfig.Prometheus.Host, appConfig.Prometheus.Port),
 	})
 	if err != nil {
-		log.Fatal("Failed to create prometheus client: ", err)
+		zap.L().Fatal("Failed to create prometheus client", zap.Error(err))
 	}
 
 	promAPI := v1.NewAPI(promClient)
+	rabbitClient, err := rabbitmq.NewClient(appConfig)
+	if err != nil {
+		zap.L().Fatal("Failed to create rabbit client", zap.Error(err))
+	}
 
 	// Setup PodReconciler
 	podReconciler := controller.NewPodReconciler(mgr, promAPI)
 	if err = podReconciler.SetupWithManager(mgr); err != nil {
-		log.Fatal("Failed to setup pod reconciler: ", err)
+		zap.L().Fatal("Failed to setup pod reconciler", zap.Error(err))
+
 	}
 
 	// Setup NodeReconciler with config
-	nodeReconciler := controller.NewNodeReconciler(mgr, promAPI, appConfig)
+	nodeReconciler := controller.NewNodeReconciler(mgr, promAPI, *rabbitClient)
 	if err = nodeReconciler.SetupWithManager(mgr); err != nil {
-		log.Fatal("Failed to setup node reconciler: ", err)
+		zap.L().Fatal("Failed to setup node reconciler", zap.Error(err))
 	}
 	// Start the manager
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		log.Fatal("Failed to start manager: ", err)
+		zap.L().Fatal("Failed to start manager", zap.Error(err))
 	}
 }
