@@ -1,0 +1,56 @@
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: health-monitor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: health-monitor
+  template:
+    metadata:
+      labels:
+        app: health-monitor
+    spec:
+      serviceAccountName: health-monitor-sa
+      containers:
+        - name: health-monitor
+          image: health-monitor:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PROMETHEUS_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: health-monitor-config
+                  key: PROMETHEUS_ADDRESS
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: password
+            - name: RABBITMQ_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: health-monitor-config
+                  key: RABBITMQ_HOST
+            - name: RABBITMQ_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: health-monitor-config
+                  key: RABBITMQ_PORT
+            - name: CPU_THRESHOLD
+              valueFrom:
+                configMapKeyRef:
+                  name: health-monitor-config
+                  key: CPU_THRESHOLD
+            - name: MEMORY_THRESHOLD
+              valueFrom:
+                configMapKeyRef:
+                  name: health-monitor-config
+                  key: MEMORY_THRESHOLD
