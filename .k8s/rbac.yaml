@@ -1,0 +1,31 @@
+# rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: health-monitor-sa
+
+---
+
+apiVersion: rbac.authorization..k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: health-monitor-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch", "delete", "update"]
+
+---
+
+apiVersion: rbac.authorization..k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: health-monitor-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: health-monitor-sa
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: health-monitor-role
+  apiGroup: rbac.authorization..k8s.io
