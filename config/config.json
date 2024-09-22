@@ -1,10 +1,10 @@
 {
   "prometheus" : {
-    "host":"http://prometheus-service.default.svc.cluster.local",
-    "port" : "9090"
+    "host":"http://127.0.0.1",
+    "port" : "51318"
   },
   "rabbitMq": {
-    "host": "rabbitmq-service.default.svc.cluster.local",
+    "host": "127.0.0.1",
     "port": "5672"
   }
 }

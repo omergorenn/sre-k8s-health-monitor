@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/omergorenn/sre-k8s-health-monitor/config"
+	"github.com/omergorenn/sre-k8s-health-monitor/pkg/config"
+	"github.com/omergorenn/sre-k8s-health-monitor/pkg/controller"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"log"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func main() {
@@ -49,11 +51,11 @@ func main() {
 		log.Fatal("Failed to setup pod reconciler: ", err)
 	}
 
-	nodeReconciler := controller.NewNodeReconciler(mgr, promAPI)
+	// Setup NodeReconciler with config
+	nodeReconciler := controller.NewNodeReconciler(mgr, promAPI, appConfig)
 	if err = nodeReconciler.SetupWithManager(mgr); err != nil {
 		log.Fatal("Failed to setup node reconciler: ", err)
 	}
-
 	// Start the manager
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		log.Fatal("Failed to start manager: ", err)

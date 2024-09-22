@@ -3,11 +3,11 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/omergorenn/sre-k8s-health-monitor/pkg/config"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	"github.com/streadway/amqp"
 	corev1 "k8s.io/api/core/v1"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -19,14 +19,15 @@ import (
 type NodeReconciler struct {
 	client.Client
 	PrometheusAPI v1.API
+	Config        *config.Config // Use the Config struct to store both configs and secrets
 }
 
-func NewNodeReconciler(mgr manager.Manager, promAPI v1.API) *NodeReconciler {
+func NewNodeReconciler(mgr manager.Manager, promAPI v1.API, appConfig *config.Config) *NodeReconciler {
 	return &NodeReconciler{
 		Client:        mgr.GetClient(),
 		PrometheusAPI: promAPI,
+		Config:        appConfig, // Pass appConfig to use in reconciler
 	}
-
 }
 
 func (r *NodeReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
@@ -109,10 +110,11 @@ func (r *NodeReconciler) isNodeUnderPressure(result model.Value, threshold float
 }
 
 func (r *NodeReconciler) createEventToQueue(message string) error {
-	rabbitmqUser := os.Getenv("RABBITMQ_USER")
-	rabbitmqPassword := os.Getenv("RABBITMQ_PASSWORD")
-	rabbitmqHost := os.Getenv("RABBITMQ_HOST")
-	rabbitmqPort := os.Getenv("RABBITMQ_PORT")
+
+	rabbitmqUser := r.Config.Secret.RabbitMqCredentials.User
+	rabbitmqPassword := r.Config.Secret.RabbitMqCredentials.Password
+	rabbitmqHost := r.Config.RabbitMq.Host
+	rabbitmqPort := r.Config.RabbitMq.Port
 
 	connStr := fmt.Sprintf("amqp://%s:%s@%s:%s/",
 		rabbitmqUser, rabbitmqPassword, rabbitmqHost, rabbitmqPort)
