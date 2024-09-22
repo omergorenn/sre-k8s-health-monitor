@@ -1,0 +1,4 @@
+.idea
+.vscode
+config/secret.json
+.DS_Store
