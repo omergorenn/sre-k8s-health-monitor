@@ -1,4 +1,3 @@
-# deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,5 +15,5 @@ spec:
       serviceAccountName: health-monitor-sa
       containers:
         - name: health-monitor
-          image: sre-health-monitor
+          image: sre-health-monitor:latest
           imagePullPolicy: IfNotPresent

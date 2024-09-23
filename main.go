@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/omergorenn/sre-k8s-health-monitor/pkg/config"
 	"github.com/omergorenn/sre-k8s-health-monitor/pkg/controller"
@@ -14,6 +15,14 @@ import (
 )
 
 func main() {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		fmt.Printf("Failed to initialize logger: %v\n", err)
+		os.Exit(1)
+	}
+	defer logger.Sync()
+	zap.ReplaceGlobals(logger)
+
 	appConfig, err := config.Get()
 	if err != nil {
 		zap.L().Fatal("Error getting configs", zap.Error(err))
@@ -23,6 +32,9 @@ func main() {
 	if err != nil {
 		zap.L().Fatal("Failed to get kubeconfig", zap.Error(err))
 	}
+	zap.L().Info("Configuration loaded successfully", zap.Any("appConfig", appConfig))
+
+	zap.L().Info("Kubeconfig obtained", zap.Any("restConfig", restConfig))
 
 	// Set up logging for ctrl runtime.
 	ctrl.SetLogger(ctrlzap.New())
