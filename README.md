@@ -97,15 +97,6 @@ The application consists of the following components:
    helm install fluentbit fluent/fluent-bit --namespace monitoring -f fluentbit-values.yaml
    ```
 
-   Sample `fluentbit-values.yaml`:
-
-   ```yaml
-   output:
-     logstash:
-       host: logstash.monitoring.svc.cluster.local
-       port: 5044
-   ```
-
 5. **Build and Deploy the Application**:
 
    - **Build Docker Image**:
@@ -122,30 +113,6 @@ The application consists of the following components:
 
    - **Deploy to Kubernetes**:
 
-     Apply the `deployment.yaml` manifest:
-
-     ```yaml
-     apiVersion: apps/v1
-     kind: Deployment
-     metadata:
-       name: health-monitor
-     spec:
-       replicas: 1
-       selector:
-         matchLabels:
-           app: health-monitor
-       template:
-         metadata:
-           labels:
-             app: health-monitor
-         spec:
-           serviceAccountName: health-monitor-sa
-           containers:
-             - name: health-monitor
-               image: health-monitor:latest
-               imagePullPolicy: IfNotPresent
-     ```
-
      Apply the deployment:
 
      ```bash
@@ -153,41 +120,6 @@ The application consists of the following components:
      ```
 
 6. **Configure RBAC**:
-
-   Create and apply the `rbac.yaml` manifest:
-
-   ```yaml
-   apiVersion: v1
-   kind: ServiceAccount
-   metadata:
-     name: health-monitor-sa
-
-   ---
-
-   apiVersion: rbac.authorization.k8s.io/v1
-   kind: ClusterRole
-   metadata:
-     name: health-monitor-role
-   rules:
-     - apiGroups: [""]
-       resources: ["pods", "nodes"]
-       verbs: ["get", "list", "watch", "delete", "update"]
-
-   ---
-
-   apiVersion: rbac.authorization.k8s.io/v1
-   kind: ClusterRoleBinding
-   metadata:
-     name: health-monitor-rolebinding
-   subjects:
-     - kind: ServiceAccount
-       name: health-monitor-sa
-       namespace: default
-   roleRef:
-     kind: ClusterRole
-     name: health-monitor-role
-     apiGroup: rbac.authorization.k8s.io
-   ```
 
    Apply the RBAC configuration:
 
