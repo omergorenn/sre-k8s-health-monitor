@@ -19,7 +19,7 @@ It integrates with Prometheus to collect metrics, uses RabbitMQ for alerting, an
 
 ## Architecture
 
-![Kubernetes Cluster Diagram](./diagram-for-sre.png)
+![Kubernetes Cluster Diagram](./images/diagram-for-sre.png)
 
 The application consists of the following components:
 
@@ -96,6 +96,8 @@ The application consists of the following components:
    ```bash
    helm install fluentbit fluent/fluent-bit --namespace monitoring -f fluentbit-values.yaml
    ```
+![Logs with Kibana](./images/kibana-logs.png)
+
 
 5. **Build and Deploy the Application**:
 

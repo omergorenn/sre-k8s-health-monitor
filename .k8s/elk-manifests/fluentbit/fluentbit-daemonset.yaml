@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "8"
+    meta.helm.sh/release-name: fluentbit
+    meta.helm.sh/release-namespace: monitoring
+  creationTimestamp: "2024-09-20T19:03:09Z"
+  generation: 8
+  labels:
+    app.kubernetes.io/instance: fluentbit
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/version: 3.1.7
+    helm.sh/chart: fluent-bit-0.47.9
+  name: fluentbit-fluent-bit
+  namespace: monitoring
+  resourceVersion: "85898"
+  uid: c6ab0e5e-1d31-4403-b4a3-ad6035639119
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: fluentbit
+      app.kubernetes.io/name: fluent-bit
+  template:
+    metadata:
+      annotations:
+        checksum/config: d68a9ebb1abd50a016fd310b8ba667af7e6b1703632ef5b89e59b8455c760f15
+        kubectl.kubernetes.io/restartedAt: "2024-09-23T19:18:27+03:00"
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: fluentbit
+        app.kubernetes.io/name: fluent-bit
+    spec:
+      containers:
+      - args:
+        - --workdir=/fluent-bit/etc
+        - --config=/fluent-bit/etc/conf/fluent-bit.conf
+        command:
+        - /fluent-bit/bin/fluent-bit
+        image: cr.fluentbit.io/fluent/fluent-bit:3.1.7
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: fluent-bit
+        ports:
+        - containerPort: 2020
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /api/v1/health
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /fluent-bit/etc/conf
+          name: config
+        - mountPath: /var/log
+          name: varlog
+        - mountPath: /var/lib/docker/containers
+          name: varlibdockercontainers
+          readOnly: true
+        - mountPath: /etc/machine-id
+          name: etcmachineid
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: fluentbit-fluent-bit
+      serviceAccountName: fluentbit-fluent-bit
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: fluentbit-fluent-bit
+        name: config
+      - hostPath:
+          path: /var/log
+          type: ""
+        name: varlog
+      - hostPath:
+          path: /var/lib/docker/containers
+          type: ""
+        name: varlibdockercontainers
+      - hostPath:
+          path: /etc/machine-id
+          type: File
+        name: etcmachineid
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  currentNumberScheduled: 1
+  desiredNumberScheduled: 1
+  numberAvailable: 1
+  numberMisscheduled: 0
+  numberReady: 1
+  observedGeneration: 8
+  updatedNumberScheduled: 1

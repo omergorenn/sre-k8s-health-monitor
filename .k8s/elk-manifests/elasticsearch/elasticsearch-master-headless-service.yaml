@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: elasticsearch
+    meta.helm.sh/release-namespace: monitoring
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  creationTimestamp: "2024-09-21T15:30:02Z"
+  labels:
+    app: elasticsearch-master
+    app.kubernetes.io/managed-by: Helm
+    chart: elasticsearch
+    heritage: Helm
+    release: elasticsearch
+  name: elasticsearch-master-headless
+  namespace: monitoring
+  resourceVersion: "15131"
+  uid: d5b023d1-81b8-4a9a-a80f-040f11f3370b
+spec:
+  clusterIP: None
+  clusterIPs:
+  - None
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  - name: transport
+    port: 9300
+    protocol: TCP
+    targetPort: 9300
+  publishNotReadyAddresses: true
+  selector:
+    app: elasticsearch-master
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

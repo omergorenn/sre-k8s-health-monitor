@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: logstash
+    meta.helm.sh/release-namespace: monitoring
+  creationTimestamp: "2024-09-20T19:04:38Z"
+  labels:
+    app: logstash-logstash
+    app.kubernetes.io/managed-by: Helm
+    chart: logstash
+    heritage: Helm
+    release: logstash
+  name: logstash-logstash-headless
+  namespace: monitoring
+  resourceVersion: "1395"
+  uid: 4b8d9bac-5d94-4d01-bdce-1101ec23720d
+spec:
+  clusterIP: None
+  clusterIPs:
+  - None
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 9600
+    protocol: TCP
+    targetPort: 9600
+  selector:
+    app: logstash-logstash
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

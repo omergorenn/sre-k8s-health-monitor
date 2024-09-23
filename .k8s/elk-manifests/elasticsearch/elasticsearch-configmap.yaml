@@ -1,0 +1,22 @@
+apiVersion: v1
+data:
+  elasticsearch.yml: |
+    xpack.security.enabled: false
+    xpack.security.http.ssl.enabled: false
+    xpack.security.transport.ssl.enabled: false
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: elasticsearch
+    meta.helm.sh/release-namespace: monitoring
+  creationTimestamp: "2024-09-21T15:30:02Z"
+  labels:
+    app: elasticsearch-master
+    app.kubernetes.io/managed-by: Helm
+    chart: elasticsearch
+    heritage: Helm
+    release: elasticsearch
+  name: elasticsearch-master-config
+  namespace: monitoring
+  resourceVersion: "15129"
+  uid: cd59c3c0-d810-45d5-94ae-ff4ec94f0585

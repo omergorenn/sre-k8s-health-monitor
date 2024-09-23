@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: fluentbit
+    meta.helm.sh/release-namespace: monitoring
+  creationTimestamp: "2024-09-20T19:03:09Z"
+  labels:
+    app.kubernetes.io/instance: fluentbit
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/version: 3.1.7
+    helm.sh/chart: fluent-bit-0.47.9
+  name: fluentbit-fluent-bit
+  namespace: monitoring
+  resourceVersion: "1298"
+  uid: 53a6b782-98e6-4869-9f22-9e600669b0fe
+spec:
+  clusterIP: 10.106.198.50
+  clusterIPs:
+  - 10.106.198.50
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 2020
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/instance: fluentbit
+    app.kubernetes.io/name: fluent-bit
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

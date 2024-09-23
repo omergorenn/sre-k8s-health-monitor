@@ -1,0 +1,156 @@
+COMPUTED VALUES:
+antiAffinity: hard
+antiAffinityTopologyKey: kubernetes.io/hostname
+clusterHealthCheckParams: wait_for_status=green&timeout=1s
+clusterName: elasticsearch
+createCert: true
+enableServiceLinks: true
+envFrom: []
+esConfig:
+  elasticsearch.yml: |
+    xpack.security.enabled: false
+    xpack.security.http.ssl.enabled: false
+    xpack.security.transport.ssl.enabled: false
+esJavaOpts: ""
+esJvmOptions: {}
+esMajorVersion: ""
+extraContainers: []
+extraEnvs: []
+extraInitContainers: []
+extraVolumeMounts: []
+extraVolumes: []
+fullnameOverride: ""
+healthNameOverride: ""
+hostAliases: []
+httpPort: 9200
+image: docker.elastic.co/elasticsearch/elasticsearch
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+imageTag: 8.5.1
+ingress:
+  annotations: {}
+  className: nginx
+  enabled: false
+  hosts:
+  - host: chart-example.local
+    paths:
+    - path: /
+  pathtype: ImplementationSpecific
+  tls: []
+initResources: {}
+keystore: []
+labels: {}
+lifecycle: {}
+masterService: ""
+maxUnavailable: 1
+minimumMasterNodes: 1
+nameOverride: ""
+networkHost: 0.0.0.0
+networkPolicy:
+  http:
+    enabled: false
+  transport:
+    enabled: false
+nodeAffinity: {}
+nodeGroup: master
+nodeSelector: {}
+persistence:
+  annotations: {}
+  enabled: true
+  labels:
+    enabled: false
+podAnnotations: {}
+podManagementPolicy: Parallel
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+podSecurityPolicy:
+  create: false
+  name: ""
+  spec:
+    fsGroup:
+      rule: RunAsAny
+    privileged: true
+    runAsUser:
+      rule: RunAsAny
+    seLinux:
+      rule: RunAsAny
+    supplementalGroups:
+      rule: RunAsAny
+    volumes:
+    - secret
+    - configMap
+    - persistentVolumeClaim
+    - emptyDir
+priorityClassName: ""
+protocol: http
+rbac:
+  automountToken: true
+  create: false
+  serviceAccountAnnotations: {}
+  serviceAccountName: ""
+readinessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 3
+  timeoutSeconds: 5
+replicas: 1
+resources:
+  limits:
+    cpu: 999m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 1Gi
+roles:
+- master
+- data
+- data_content
+- data_hot
+- data_warm
+- data_cold
+- ingest
+- ml
+- remote_cluster_client
+- transform
+schedulerName: ""
+secret:
+  enabled: true
+  password: JGAKuWxxqSdaVkA8
+secretMounts: []
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  runAsNonRoot: true
+  runAsUser: 1000
+service:
+  annotations: {}
+  enabled: true
+  externalTrafficPolicy: ""
+  httpPortName: http
+  labels: {}
+  labelsHeadless: {}
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  name: elasticsearch
+  nodePort: ""
+  publishNotReadyAddresses: false
+  transportPortName: transport
+  type: ClusterIP
+sysctlInitContainer:
+  enabled: true
+sysctlVmMaxMapCount: 262144
+terminationGracePeriod: 120
+tests:
+  enabled: true
+tolerations: []
+transportPort: 9300
+updateStrategy: RollingUpdate
+volumeClaimTemplate:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

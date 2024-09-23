@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: kibana
+    meta.helm.sh/release-namespace: monitoring
+  creationTimestamp: "2024-09-20T22:16:10Z"
+  labels:
+    app: kibana
+    app.kubernetes.io/managed-by: Helm
+    heritage: Helm
+    release: kibana
+  name: kibana-kibana
+  namespace: monitoring
+  resourceVersion: "5611"
+  uid: 87cab508-4274-4b67-96f2-31b0d6c5e471
+spec:
+  clusterIP: 10.101.98.48
+  clusterIPs:
+  - 10.101.98.48
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: http
+    port: 5601
+    protocol: TCP
+    targetPort: 5601
+  selector:
+    app: kibana
+    release: kibana
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

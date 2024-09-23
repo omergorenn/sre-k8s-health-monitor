@@ -1,0 +1,59 @@
+apiVersion: v1
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush        1
+        Log_Level    info
+        Parsers_File parsers.conf
+        HTTP_Server  On
+        HTTP_Listen  0.0.0.0
+        HTTP_Port    2020
+
+    [INPUT]
+        Name              tail
+        Path              /var/log/containers/*.log
+        multiline.parser  docker, cri
+        Tag               kube.*
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+
+    [FILTER]
+        Name             kubernetes
+        Match            kube.*
+        Merge_Log        On
+        Keep_Log         Off
+        K8S-Logging.Parser On
+        K8S-Logging.Exclude On
+
+    [OUTPUT]
+        Name            es
+        Match           *
+        Host            elasticsearch-master
+        Port            9200
+        Logstash_Format Off
+        Logstash_Prefix  kubernetes-logs
+        Retry_Limit     False
+        Index           kubernetes-logs
+        HTTP_User       elastic
+        HTTP_Passwd     JGAKuWxxqSdaVkA8
+        tls             On
+        tls.verify      Off
+  parsers.conf: |
+    [PARSER]
+        Name        docker
+        Format      json
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"fluent-bit.conf":"[SERVICE]\n    Flush        1\n    Log_Level    info\n    Parsers_File parsers.conf\n    HTTP_Server  On\n    HTTP_Listen  0.0.0.0\n    HTTP_Port    2020\n\n[INPUT]\n    Name              tail\n    Path              /var/log/containers/*.log\n    multiline.parser  docker, cri\n    Tag               kube.*\n    Mem_Buf_Limit     5MB\n    Skip_Long_Lines   On\n\n[FILTER]\n    Name             kubernetes\n    Match            kube.*\n    Merge_Log        On\n    Keep_Log         Off\n    K8S-Logging.Parser On\n    K8S-Logging.Exclude On\n\n[OUTPUT]\n    Name            es\n    Match           *\n    Host            elasticsearch-master\n    Port            9200\n    Logstash_Format Off\n    Logstash_Prefix  kubernetes-logs\n    Retry_Limit     False\n    Index           kubernetes-logs\n    HTTP_User       elastic\n    HTTP_Passwd     JGAKuWxxqSdaVkA8\n    tls             On\n    tls.verify      Off\n","parsers.conf":"[PARSER]\n    Name        docker\n    Format      json\n    Time_Key    time\n    Time_Format %Y-%m-%dT%H:%M:%S.%L\n    Time_Keep   On\n"},"kind":"ConfigMap","metadata":{"annotations":{},"creationTimestamp":"2024-09-20T23:20:24Z","labels":{"app":"fluentbit"},"name":"fluent-bit-config","namespace":"monitoring","resourceVersion":"16760","uid":"5a9c280f-b440-48a3-ab16-35dbd95b66c6"}}
+  creationTimestamp: "2024-09-20T23:20:24Z"
+  labels:
+    app: fluentbit
+  name: fluent-bit-config
+  namespace: monitoring
+  resourceVersion: "17095"
+  uid: 5a9c280f-b440-48a3-ab16-35dbd95b66c6

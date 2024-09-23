@@ -1,0 +1,78 @@
+COMPUTED VALUES:
+affinity: {}
+annotations: {}
+automountToken: true
+elasticsearchCertificateAuthoritiesFile: ca.crt
+elasticsearchCertificateSecret: elasticsearch-master-certs
+elasticsearchCredentialSecret: elasticsearch-master-credentials
+elasticsearchHosts: https://elasticsearch-master:9200
+envFrom: []
+extraContainers: []
+extraEnvs:
+- name: NODE_OPTIONS
+  value: --max-old-space-size=1800
+extraInitContainers: []
+extraVolumeMounts: []
+extraVolumes: []
+fullnameOverride: ""
+healthCheckPath: /app/kibana
+hostAliases: []
+httpPort: 5601
+image: docker.elastic.co/kibana/kibana
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+imageTag: 8.5.1
+ingress:
+  annotations: {}
+  className: nginx
+  enabled: false
+  hosts:
+  - host: kibana-example.local
+    paths:
+    - path: /
+  pathtype: ImplementationSpecific
+kibanaConfig: {}
+labels: {}
+lifecycle: {}
+nameOverride: ""
+nodeSelector: {}
+podAnnotations: {}
+podSecurityContext:
+  fsGroup: 1000
+priorityClassName: ""
+protocol: http
+readinessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 3
+  timeoutSeconds: 5
+replicas: 1
+resources:
+  limits:
+    cpu: 250m
+    memory: 1Gi
+  requests:
+    cpu: 250m
+    memory: 1Gi
+secretMounts: []
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  runAsNonRoot: true
+  runAsUser: 1000
+serverHost: 0.0.0.0
+service:
+  annotations: {}
+  httpPortName: http
+  labels: {}
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  nodePort: ""
+  port: 5601
+  type: ClusterIP
+serviceAccount: ""
+tolerations: []
+updateStrategy:
+  type: Recreate
