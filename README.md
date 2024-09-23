@@ -19,6 +19,8 @@ It integrates with Prometheus to collect metrics, uses RabbitMQ for alerting, an
 
 ## Architecture
 
+![Kubernetes Cluster Diagram](./diagram-for-sre.png)
+
 The application consists of the following components:
 
 1. **Node Reconciler**: Monitors node CPU and memory usage via Prometheus and sends alerts to RabbitMQ when thresholds are exceeded.
